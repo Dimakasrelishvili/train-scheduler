@@ -42,10 +42,9 @@
                     <tr>
                       <th scope="col">train Name</th>
                       <th scope="col">destination</th>
-                      <th scope="col">first train time</th>
-                      <th scope="col">Months Worked</th>
-                      <th scope="col">Monthly Rate ($)</th>
-                      <th scope="col">Total Billed ($)</th>
+                      <th scope="col">Frequency</th>
+                      <th scope="col">Next arrival</th>
+                      <th scope="col">Minutes away</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -60,26 +59,26 @@
           <div class="col-md-12">
             <!-- Add Employee  -->
             <div class="card mb-4">
-              <div class="card-header">Add Employee</div>
+              <div class="card-header">Add Train</div>
               <div class="card-body">
     
                 <!-- Entry Form -->
                 <form>
                   <div class="form-group">
-                    <label for="employee-name-input">Employee Name</label>
-                    <input class="form-control" id="employee-name-input" placeholder="Jane Doe" type="text">
+                    <label for="employee-name-input">Train Name</label>
+                    <input class="form-control" id="employee-name-input" placeholder="Go Train" type="text">
                   </div>
                   <div class="form-group">
-                    <label for="role-input">Role</label>
-                    <input class="form-control" id="role-input" placeholder="CEO" type="text">
+                    <label for="role-input">Dastination</label>
+                    <input class="form-control" id="role-input" placeholder="" type="text">
                   </div>
                   <div class="form-group">
-                    <label for="start-input">Start Date (MM/DD/YYYY)</label>
-                    <input class="form-control" id="start-input" placeholder="01/08/1989" type="text">
+                    <label for="start-input" type = "time" >First Train Time</label>
+                    <input class="form-control" type = "text" id="start-input" placeholder="12:33" >
                   </div>
                   <div class="form-group">
-                    <label for="rate-input">Monthly Rate</label>
-                    <input class="form-control" id="rate-input" placeholder="200000" type="text">
+                    <label for="rate-input">Frequency</label>
+                    <input class="form-control" id="rate-input" placeholder="5" type="text">
                   </div>
                   <button class="btn btn-primary float-right" id="add-employee-btn">Submit</button>
                 </form>
@@ -123,11 +122,11 @@ $("#add-employee-btn").on("click", function(event) {
   event.preventDefault();
 
   // Grabs user input
-  var empName = $("#employee-name-input").val().trim();
-  var empRole = $("#role-input").val().trim();
-  var empStart = moment($("#start-input").val().trim(), "MM/DD/YYYY").format("X");
-  var empRate = $("#rate-input").val().trim();
-
+  var empName = $("#employee-name-input").val().trim(); //train name
+  var empRole = $("#role-input").val().trim();            // destination
+  var empStart = moment($("#start-input").val().trim(), "hh:mm").format("hh:mm");  //first train
+  var empRate = $("#rate-input").val().trim();      //frequency
+   console.log( "myyyyyyyyy " + empStart)
   // Creates local "temporary" object for holding employee data
   var newEmp = {
     name: empName,
@@ -145,7 +144,7 @@ $("#add-employee-btn").on("click", function(event) {
   console.log(newEmp.start);
   console.log(newEmp.rate);
 
-  alert("Employee successfully added");
+  alert("Train successfully added");
 
   // Clears all of the text-boxes
   $("#employee-name-input").val("");
@@ -170,26 +169,59 @@ database.ref().on("child_added", function(childSnapshot) {
   console.log(empStart);
   console.log(empRate);
 
-  // Prettify the employee start
-  var empStartPretty = moment.unix(empStart).format("MM/DD/YYYY");
+ 
 
-  // Calculate the months worked using hardcore math
-  // To calculate the months worked
-  var empMonths = moment().diff(moment(empStart, "X"), "months");
-  console.log(empMonths);
+// Time is 3:30 AM
+//var empStart = "03:30";
 
-  // Calculate the total billed rate
-  var empBilled = empMonths * empRate;
-  console.log(empBilled);
+// First Time (pushed back 1 year to make sure it comes before current time)
+var firstTimeConverted = moment(empStart, "HH:mm").subtract(1, "years");
+console.log(firstTimeConverted);
+
+// Current Time
+var currentTime = moment();
+console.log("CURRENT TIME: " + moment(currentTime).format("hh:mm"));
+
+// Difference between the times
+var diffTime = moment().diff(moment(firstTimeConverted), "minutes");
+console.log("DIFFERENCE IN TIME: " + diffTime);
+
+// Time apart (remainder)
+var tRemainder = diffTime % empRate;
+console.log("rrrr" + tRemainder);
+
+// Minute Until Train
+var tMinutesTillTrain = empRate - tRemainder;
+console.log("MINUTES TILL TRAIN: " + tMinutesTillTrain);
+
+// Next Train
+var nextTrain = moment().add(tMinutesTillTrain, "minutes");
+console.log("ARRIVAL TIME: " + moment(nextTrain).format("hh:mm"));
+
+
+
+
+
+  // // Prettify the employee start
+  // var empStartPretty = moment.unix(empStart).format("HH/MM");
+
+  // // Calculate the months worked using hardcore math
+  // // To calculate the months worked
+  // var empMonths = moment().diff(moment(empStart, "X"), "months");
+  // console.log(empMonths);
+
+  // // Calculate the total billed rate
+  // var empBilled = empMonths * empRate;
+  // console.log(empBilled);
 
   // Create the new row
   var newRow = $("<tr>").append(
     $("<td>").text(empName),
     $("<td>").text(empRole),
-    $("<td>").text(empStartPretty),
-    $("<td>").text(empMonths),
     $("<td>").text(empRate),
-    $("<td>").text(empBilled)
+   // $("<td>").text(empMonths),
+    $("<td>").text(nextTrain),
+    $("<td>").text(tMinutesTillTrain)
   );
 
   // Append the new row to the table
@@ -238,34 +270,34 @@ database.ref().on("child_added", function(childSnapshot) {
     // 5 + 3:16 = 3:21
 
     // Assumptions
-    var tFrequency = 3;
+    // var tFrequency = 3;
 
-    // Time is 3:30 AM
-    var firstTime = "03:30";
+    // // Time is 3:30 AM
+    // var firstTime = "03:30";
 
-    // First Time (pushed back 1 year to make sure it comes before current time)
-    var firstTimeConverted = moment(firstTime, "HH:mm").subtract(1, "years");
-    console.log(firstTimeConverted);
+    // // First Time (pushed back 1 year to make sure it comes before current time)
+    // var firstTimeConverted = moment(firstTime, "HH:mm").subtract(1, "years");
+    // console.log(firstTimeConverted);
 
-    // Current Time
-    var currentTime = moment();
-    console.log("CURRENT TIME: " + moment(currentTime).format("hh:mm"));
+    // // Current Time
+    // var currentTime = moment();
+    // console.log("CURRENT TIME: " + moment(currentTime).format("hh:mm"));
 
-    // Difference between the times
-    var diffTime = moment().diff(moment(firstTimeConverted), "minutes");
-    console.log("DIFFERENCE IN TIME: " + diffTime);
+    // // Difference between the times
+    // var diffTime = moment().diff(moment(firstTimeConverted), "minutes");
+    // console.log("DIFFERENCE IN TIME: " + diffTime);
 
-    // Time apart (remainder)
-    var tRemainder = diffTime % tFrequency;
-    console.log(tRemainder);
+    // // Time apart (remainder)
+    // var tRemainder = diffTime % tFrequency;
+    // console.log(tRemainder);
 
-    // Minute Until Train
-    var tMinutesTillTrain = tFrequency - tRemainder;
-    console.log("MINUTES TILL TRAIN: " + tMinutesTillTrain);
+    // // Minute Until Train
+    // var tMinutesTillTrain = tFrequency - tRemainder;
+    // console.log("MINUTES TILL TRAIN: " + tMinutesTillTrain);
 
-    // Next Train
-    var nextTrain = moment().add(tMinutesTillTrain, "minutes");
-    console.log("ARRIVAL TIME: " + moment(nextTrain).format("hh:mm"));
+    // // Next Train
+    // var nextTrain = moment().add(tMinutesTillTrain, "minutes");
+    // console.log("ARRIVAL TIME: " + moment(nextTrain).format("hh:mm"));
 
 
 
